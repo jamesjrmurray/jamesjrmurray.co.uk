@@ -1,0 +1,17 @@
+---
+import { career, contact } from '../content/site';
+const rows = [...career.roles, career.engineering];
+---
+<section data-section="career" class="mx-auto max-w-[1120px] px-5 pt-24 sm:px-8 sm:pt-28">
+  <h2 class="mb-8 font-display text-[32px] font-medium text-navy sm:text-4xl">Career</h2>
+  <ol class="border-t border-line text-base">
+    {rows.map((r) => (
+      <li class="flex flex-wrap gap-x-8 gap-y-1 border-b border-line py-5">
+        <span class="w-44 shrink-0 text-muted">{r.dates}</span>
+        <span class="min-w-0 flex-[1_1_320px] font-medium text-navy">{r.title} · {r.org}</span>
+        {r.note && <span class="min-w-0 flex-[1_1_260px] text-body">{r.note}</span>}
+      </li>
+    ))}
+  </ol>
+  <p class="mt-5"><a href={contact.linkedin} data-track="linkedin_click" data-track-location="career" class="link-underline text-[15px]">Full history on LinkedIn →</a></p>
+</section>

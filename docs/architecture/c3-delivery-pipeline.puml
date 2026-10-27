@@ -1,0 +1,44 @@
+@startuml c3-delivery-pipeline
+!include _common.puml
+!include C4P/C4_Component.puml
+title C3 · Components — delivery pipeline (GitHub Actions → AWS)
+caption $VERIFIED
+
+Person(james, "James Murray")
+
+Container_Boundary(gh, "GitHub — jamesjrmurray/Jamesjrmurray_web") {
+  Component(ci, "CI workflow", ".github/workflows/ci.yml (every push/PR)", "Read-only token. npm ci → verify (astro check, 112 unit tests, build, check-copy) → e2e in Chromium, Firefox, WebKit, iPhone Safari")
+  Component(deploy, "Deploy workflow", ".github/workflows/deploy.yml", "dev on push to develop · stage on v* tag push · prod only via manual Run workflow on a v* tag with typed confirmation")
+  Component(envjob, "Deploy-environment job", ".github/workflows/deploy-env.yml", "Uses GitHub environment vars: AWS_ROLE_ARN, SITE_URL, PUBLIC_GA_ID. Third-party actions pinned to commit SHAs")
+  Component(build, "Build + copy gate", "npm run build, scripts/check-copy.mjs", "SITE_ENV per env; fails on availability language, phone, email, placeholders, inline scripts")
+  Component(upload, "Upload", "aws s3 sync (x3)", "1) /_astro immutable 1y  2) HTML etc no-cache  3) --delete stale (keeps old /_astro)")
+  Component(inval, "Invalidate", "aws cloudfront create-invalidation /*")
+  Component(smoke, "Smoke checks", "scripts/smoke.sh", "200s, clean URLs, branded 404, noindex/robots per env, previews block visitors or crawlers")
+}
+
+AWSCloudGroup(cloud) {
+  Container(oidc, "GitHub OIDC provider", "IAM", "token.actions.githubusercontent.com", $sprite="IdentityandAccessManagement")
+  Container(role, "jm-site-github-deploy", "IAM role", "dev + stage buckets/distributions only; trusts environment:dev and :stage", $sprite="IdentityAccessManagementRole")
+  Container(prodrole, "jm-site-github-deploy-prod", "IAM role", "prod bucket/distribution only; trusts environment:prod only", $sprite="IdentityAccessManagementRole")
+  ContainerDb(s3, "jm-site-{dev,stage,prod}-<account-id>", "S3 buckets", "", $sprite="SimpleStorageServiceBucket")
+  Container(cf, "Distributions dev/stage/prod", "CloudFront", "", $sprite="CloudFront")
+  Container(cfn, "jm-site-* stacks", "CloudFormation", "Outputs BucketName, DistributionId", $sprite="CloudFormationStack")
+}
+
+Rel(james, deploy, "push develop / push v* tag / Run workflow")
+Rel(james, ci, "push")
+Rel(deploy, envjob, "calls per environment")
+Rel(envjob, build, "1")
+Rel(envjob, oidc, "2 · OIDC token", "configure-aws-credentials")
+Rel(oidc, role, "AssumeRoleWithWebIdentity (dev, stage)")
+Rel(oidc, prodrole, "AssumeRoleWithWebIdentity (prod)")
+Rel(envjob, cfn, "3 · describe-stacks for outputs (as role)")
+Rel(envjob, upload, "4")
+Rel(upload, s3, "s3 sync")
+Rel(envjob, inval, "5")
+Rel(inval, cf, "CreateInvalidation")
+Rel(envjob, smoke, "6 · after 60s")
+Rel(smoke, cf, "curl SITE_URL", "HTTPS")
+
+SHOW_LEGEND()
+@enduml

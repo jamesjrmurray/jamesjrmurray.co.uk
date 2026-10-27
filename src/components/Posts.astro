@@ -1,0 +1,29 @@
+---
+import { monthYear } from '../lib/dates';
+import type { Post } from '../content/types';
+import { latestPosts } from '../lib/posts';
+
+interface Props { posts: Post[] }
+const items = latestPosts(Astro.props.posts);
+const fmt = monthYear;
+---
+{items.length > 0 && (
+  <section data-section="writing" id="writing" class="mx-auto max-w-[1120px] scroll-mt-6 px-5 pt-24 sm:px-8 sm:pt-28">
+    <div class="mb-8 flex flex-wrap items-baseline justify-between gap-4">
+      <h2 class="font-display text-[32px] font-medium text-navy sm:text-4xl">Writing</h2>
+      <a href="https://www.linkedin.com/in/jamesjrmurray" data-track="linkedin_click" data-track-location="writing" class="link-underline text-[15px]">All on LinkedIn →</a>
+    </div>
+    <ul class="border-t border-line">
+      {items.map((p) => (
+        <li class="relative flex flex-wrap gap-x-8 gap-y-2 border-b border-line py-7">
+          <span class="w-28 shrink-0 text-sm text-red">{p.type === 'talk' ? 'Talk' : 'Article'}</span>
+          <span class="min-w-0 flex-[1_1_420px]">
+            <a href={p.url} data-track="post_click" data-track-title={p.title} class="block font-display text-[22px] text-navy no-underline after:absolute after:inset-0 hover:text-red">{p.title}</a>
+            <span class="mt-2 block text-base leading-relaxed text-body">{p.summary}</span>
+          </span>
+          <span class="text-sm text-muted">{fmt(p.date)}{p.host ? ` · ${p.host}` : ''} · {p.type === 'talk' ? 'Watch →' : 'Read on LinkedIn →'}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}

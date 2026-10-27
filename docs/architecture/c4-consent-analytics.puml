@@ -1,0 +1,54 @@
+@startuml c4-consent-analytics
+!include _common.puml
+title C4 · Code — consent and analytics flow (src/lib/consent.ts, consent-ui.ts, ga.ts, track.ts)
+caption $VERIFIED
+autonumber
+actor Visitor
+participant "ConsentBanner.astro\n[data-consent]" as banner
+participant "consent-ui.ts\ninitConsent()" as ui
+participant "consent.ts\nsafeStorage / readConsent / writeConsent" as store
+participant "ga.ts\nloadGA / clearGaCookies" as ga
+participant "track.ts\ninitTracking / trackEvent" as track
+participant "Google Analytics 4\n(googletagmanager.com, region1.analytics.google.com)" as GA
+
+== Page load ==
+ui -> store : readConsent(safeStorage())  — key jm-consent-v1
+alt granted
+  ui -> ga : loadGA(<ga-id>)
+  ga -> GA : gtag.js + page_view
+else denied
+  ui -> ga : clearGaCookies()  (removes leftover _ga*)
+else no decision / storage blocked
+  ui -> banner : hidden = false
+end
+track -> track : listen for clicks on [data-track] and scroll (50% / 90%)
+
+== Visitor chooses ==
+alt Accept
+  Visitor -> banner : Accept
+  ui -> store : writeConsent('granted')  (no-op if storage blocked)
+  ui -> banner : hide, return focus (opener or #main)
+  ui -> ga : loadGA(id)
+  ga -> GA : gtag config
+else Reject (first visit)
+  Visitor -> banner : Reject
+  ui -> store : writeConsent('denied')
+  ui -> banner : hide, focus #main
+else Reject after earlier Accept (via Cookie settings)
+  Visitor -> banner : Reject
+  ui -> store : writeConsent('denied')
+  ui -> ga : clearGaCookies()
+  ui -> Visitor : location.reload()  — GA no longer loaded
+else Escape on a reopened banner
+  ui -> banner : close without changing choice
+end
+
+== Events ==
+Visitor -> track : click a[data-track="linkedin_click"|"case_study_open"|"cv_download"|"post_click"] / scroll
+track -> track : eventFromElement() → {name, params}
+alt window.gtag exists (consent given)
+  track -> GA : gtag('event', name, params)
+else no consent
+  track -> track : no-op — nothing sent
+end
+@enduml

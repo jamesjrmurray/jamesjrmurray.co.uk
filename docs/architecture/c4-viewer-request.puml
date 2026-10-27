@@ -1,0 +1,37 @@
+@startuml c4-viewer-request
+!include _common.puml
+title C4 · Code — CloudFront viewer-request function (infra/viewer-request.js)
+caption $VERIFIED
+autonumber
+actor "Browser / crawler" as client
+CloudFrontParticipant(cf, "Distribution", "CloudFront")
+CloudFrontFunctionsParticipant(fn, "handler(event)", "CloudFront Function, cloudfront-js-2.0")
+SimpleStorageServiceParticipant(s3, "Site bucket", "S3 via OAC")
+
+client -> cf : GET https://<host><uri>?<query>
+cf -> fn : viewer-request event
+alt host is not CANONICAL_HOST (www., *.cloudfront.net)
+  fn --> cf : 301, Location: https://<CANONICAL_HOST><uri>?<query>
+  cf --> client : 301 Moved Permanently
+else uri ends with "/"
+  fn --> cf : request.uri = uri + "index.html"
+  cf -> s3 : GET /…/index.html
+  s3 --> cf : object
+  cf --> client : 200 (+ security headers; noindex outside prod)
+else last path segment has no "."
+  fn --> cf : request.uri = uri + "/index.html"
+  cf -> s3 : GET /…/index.html
+  s3 --> cf : object
+  cf --> client : 200
+else file with extension (/_astro/x.css, /og.png, /robots.txt)
+  fn --> cf : unchanged
+  cf -> s3 : GET object
+  alt exists
+    s3 --> cf : object
+    cf --> client : 200
+  else missing (S3 returns 403 or 404)
+    cf --> client : 404 with /404.html (custom error response)
+  end
+end
+note right of cf : Plain HTTP is redirected to HTTPS by the\ndistribution (ViewerProtocolPolicy: redirect-to-https)\nbefore the function runs.
+@enduml

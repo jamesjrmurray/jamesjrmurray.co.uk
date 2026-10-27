@@ -1,0 +1,139 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: GitHub Actions OIDC deploy role for jamesjrmurray.co.uk
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: jamesjrmurray/Jamesjrmurray_web
+  GitHubRepoWithIds:
+    Type: String
+    Default: <owner@id>/<repo@id>
+    Description: Immutable owner@id/repo@id form GitHub now puts in the OIDC sub claim
+  CreateProvider:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+    Description: Set false if this AWS account already has the token.actions.githubusercontent.com provider
+
+  NonProdDistributionIds:
+    Type: CommaDelimitedList
+    Default: <dev-dist-id>,<stage-dist-id>
+    Description: CloudFront distribution IDs for dev and stage (jm-site-dev, jm-site-stage outputs)
+  ProdDistributionId:
+    Type: String
+    Default: <prod-dist-id>
+    Description: CloudFront distribution ID for prod (jm-site-prod output)
+
+Conditions:
+  MakeProvider: !Equals [!Ref CreateProvider, 'true']
+
+Resources:
+  GitHubProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: MakeProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+      ThumbprintList: [6938fd4d98bab03faadb97b34396831e3780aea1]
+
+  # Dev and stage only: a push to develop can never touch the live site.
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: jm-site-github-deploy
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - MakeProvider
+                - !Ref GitHubProvider
+                - !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  - !Sub repo:${GitHubRepo}:environment:dev
+                  - !Sub repo:${GitHubRepo}:environment:stage
+                  - !Sub repo:${GitHubRepoWithIds}:environment:dev
+                  - !Sub repo:${GitHubRepoWithIds}:environment:stage
+      Policies:
+        - PolicyName: deploy-site
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [s3:ListBucket]
+                Resource:
+                  - !Sub arn:aws:s3:::jm-site-dev-${AWS::AccountId}
+                  - !Sub arn:aws:s3:::jm-site-stage-${AWS::AccountId}
+              - Effect: Allow
+                Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+                Resource:
+                  - !Sub arn:aws:s3:::jm-site-dev-${AWS::AccountId}/*
+                  - !Sub arn:aws:s3:::jm-site-stage-${AWS::AccountId}/*
+              - Effect: Allow
+                Action: [cloudfront:CreateInvalidation, cloudfront:GetInvalidation]
+                Resource:
+                  - !Sub
+                    - arn:aws:cloudfront::${AWS::AccountId}:distribution/${Id}
+                    - Id: !Select [0, !Ref NonProdDistributionIds]
+                  - !Sub
+                    - arn:aws:cloudfront::${AWS::AccountId}:distribution/${Id}
+                    - Id: !Select [1, !Ref NonProdDistributionIds]
+              - Effect: Allow
+                Action: [cloudformation:DescribeStacks]
+                Resource:
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/jm-site-dev/*
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/jm-site-stage/*
+              - Effect: Allow   # dev/stage password, so the smoke test can get past the prompt
+                Action: [ssm:GetParameter]
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/jm-site/preview-auth
+
+  # Live site only, and only from the GitHub "prod" environment (v* tags, typed confirm).
+  ProdDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: jm-site-github-deploy-prod
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - MakeProvider
+                - !Ref GitHubProvider
+                - !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub:
+                  - !Sub repo:${GitHubRepo}:environment:prod
+                  - !Sub repo:${GitHubRepoWithIds}:environment:prod
+      Policies:
+        - PolicyName: deploy-site
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [s3:ListBucket]
+                Resource: !Sub arn:aws:s3:::jm-site-prod-${AWS::AccountId}
+              - Effect: Allow
+                Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+                Resource: !Sub arn:aws:s3:::jm-site-prod-${AWS::AccountId}/*
+              - Effect: Allow
+                Action: [cloudfront:CreateInvalidation, cloudfront:GetInvalidation]
+                Resource: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${ProdDistributionId}
+              - Effect: Allow
+                Action: [cloudformation:DescribeStacks]
+                Resource: !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/jm-site-prod/*
+
+Outputs:
+  DeployRoleArn: { Value: !GetAtt DeployRole.Arn }
+  ProdDeployRoleArn: { Value: !GetAtt ProdDeployRole.Arn }

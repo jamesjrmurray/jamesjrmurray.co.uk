@@ -1,0 +1,256 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: jamesjrmurray.co.uk static site — one environment (S3 + CloudFront)
+
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks: [W1030]   # DomainNames default '' is only used when CertificateArn is set
+
+Parameters:
+  EnvName:
+    Type: String
+    AllowedValues: [dev, stage, prod]
+  DomainNames:
+    Type: CommaDelimitedList
+    Default: ''
+    Description: e.g. jamesjrmurray.co.uk,www.jamesjrmurray.co.uk (prod) or dev.jamesjrmurray.co.uk
+  CertificateArn:
+    Type: String
+    Default: ''
+    Description: ACM certificate ARN in us-east-1 covering DomainNames
+  HostedZoneId:
+    Type: String
+    Default: ''
+    Description: Route 53 hosted zone for the domain — creates A/AAAA aliases (apex and www for prod, the first DomainNames entry otherwise)
+  AlarmEmail:
+    Type: String
+    Default: ''
+    Description: Email for downtime alerts (prod) — creates a Route 53 health check, alarm and SNS email subscription
+  FunctionCode:
+    Type: String
+    NoEcho: true
+    Description: Contents of infra/viewer-request.js (passed by deploy-stack.sh, with dev/stage secrets filled in)
+
+Conditions:
+  HasDomain: !Not [!Equals [!Ref CertificateArn, '']]
+  IsProd: !Equals [!Ref EnvName, prod]
+  MakeMonitoring: !And [!Condition HasDomain, !Not [!Equals [!Ref AlarmEmail, '']]]
+  MakeDns: !And [!Condition HasDomain, !Not [!Equals [!Ref HostedZoneId, '']]]
+  MakeProdDns: !And [!Condition MakeDns, !Condition IsProd]
+  MakeEnvDns: !And [!Condition MakeDns, !Not [!Condition IsProd]]
+
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub jm-site-${EnvName}-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ ObjectOwnership: BucketOwnerEnforced }]
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      # Prod keeps overwritten/deleted files for 30 days so a bad deploy can be rolled back.
+      VersioningConfiguration: !If [IsProd, { Status: Enabled }, !Ref AWS::NoValue]
+      LifecycleConfiguration: !If
+        - IsProd
+        - Rules:
+            - Id: expire-old-versions
+              Status: Enabled
+              NoncurrentVersionExpiration: { NoncurrentDays: 30 }
+              AbortIncompleteMultipartUpload: { DaysAfterInitiation: 7 }
+        - !Ref AWS::NoValue
+
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub jm-site-${EnvName}
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  ViewerRequestFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub jm-viewer-request-${EnvName}
+      AutoPublish: true
+      FunctionCode: !Ref FunctionCode
+      FunctionConfig:
+        Comment: Clean URLs and www to apex redirect
+        Runtime: cloudfront-js-2.0
+
+  HeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub jm-site-headers-${EnvName}
+        SecurityHeadersConfig:
+          StrictTransportSecurity: { AccessControlMaxAgeSec: 63072000, IncludeSubdomains: true, Preload: false, Override: true }
+          ContentTypeOptions: { Override: true }
+          FrameOptions: { FrameOption: DENY, Override: true }
+          ReferrerPolicy: { ReferrerPolicy: strict-origin-when-cross-origin, Override: true }
+          ContentSecurityPolicy:
+            Override: true
+            ContentSecurityPolicy: >-
+              default-src 'self';
+              script-src 'self' https://www.googletagmanager.com;
+              connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com;
+              img-src 'self' data: https://*.google-analytics.com https://www.googletagmanager.com;
+              style-src 'self' 'unsafe-inline';
+              font-src 'self';
+              form-action 'none';
+              frame-ancestors 'none';
+              base-uri 'self';
+              object-src 'none'
+        CustomHeadersConfig:
+          Items:
+            - { Header: Permissions-Policy, Value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()', Override: true }
+            - { Header: Cross-Origin-Opener-Policy, Value: same-origin, Override: true }
+            - { Header: Cross-Origin-Resource-Policy, Value: same-origin, Override: true }
+            - !If
+              - IsProd
+              - !Ref AWS::NoValue
+              - { Header: X-Robots-Tag, Value: 'noindex, nofollow', Override: true }
+        RemoveHeadersConfig:
+          Items:
+            - { Header: Server }
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub jamesjrmurray.co.uk ${EnvName}
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: PriceClass_100
+        DefaultRootObject: index.html
+        Aliases: !If [HasDomain, !Ref DomainNames, !Ref AWS::NoValue]
+        ViewerCertificate: !If
+          - HasDomain
+          - AcmCertificateArn: !Ref CertificateArn
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
+        Origins:
+          - Id: s3
+            DomainName: !GetAtt Bucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt OriginAccessControl.Id
+            S3OriginConfig: { OriginAccessIdentity: '' }
+        DefaultCacheBehavior:
+          TargetOriginId: s3
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6   # Managed-CachingOptimized
+          ResponseHeadersPolicyId: !Ref HeadersPolicy
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt ViewerRequestFunction.FunctionMetadata.FunctionARN
+        CustomErrorResponses:
+          - { ErrorCode: 403, ResponseCode: 404, ResponsePagePath: /404.html, ErrorCachingMinTTL: 60 }
+          - { ErrorCode: 404, ResponseCode: 404, ResponsePagePath: /404.html, ErrorCachingMinTTL: 60 }
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontRead
+            Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub ${Bucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+
+  DnsRecords:
+    Type: AWS::Route53::RecordSetGroup
+    Condition: MakeProdDns
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      RecordSets:
+        - Name: jamesjrmurray.co.uk.
+          Type: A
+          AliasTarget: { DNSName: !GetAtt Distribution.DomainName, HostedZoneId: Z2FDTNDATAQYW2 }
+        - Name: jamesjrmurray.co.uk.
+          Type: AAAA
+          AliasTarget: { DNSName: !GetAtt Distribution.DomainName, HostedZoneId: Z2FDTNDATAQYW2 }
+        - Name: www.jamesjrmurray.co.uk.
+          Type: A
+          AliasTarget: { DNSName: !GetAtt Distribution.DomainName, HostedZoneId: Z2FDTNDATAQYW2 }
+        - Name: www.jamesjrmurray.co.uk.
+          Type: AAAA
+          AliasTarget: { DNSName: !GetAtt Distribution.DomainName, HostedZoneId: Z2FDTNDATAQYW2 }
+
+  EnvDnsRecords:
+    Type: AWS::Route53::RecordSetGroup
+    Condition: MakeEnvDns
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      RecordSets:
+        - Name: !Sub
+            - '${Name}.'
+            - Name: !Select [0, !Ref DomainNames]
+          Type: A
+          AliasTarget: { DNSName: !GetAtt Distribution.DomainName, HostedZoneId: Z2FDTNDATAQYW2 }
+        - Name: !Sub
+            - '${Name}.'
+            - Name: !Select [0, !Ref DomainNames]
+          Type: AAAA
+          AliasTarget: { DNSName: !GetAtt Distribution.DomainName, HostedZoneId: Z2FDTNDATAQYW2 }
+
+  HealthCheck:
+    Type: AWS::Route53::HealthCheck
+    Condition: MakeMonitoring
+    Properties:
+      HealthCheckConfig:
+        Type: HTTPS
+        FullyQualifiedDomainName: jamesjrmurray.co.uk
+        ResourcePath: /
+        Port: 443
+        RequestInterval: 30
+        FailureThreshold: 3
+      HealthCheckTags:
+        - { Key: Name, Value: jamesjrmurray.co.uk }
+
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Condition: MakeMonitoring
+    Properties:
+      TopicName: !Sub jm-site-${EnvName}-alerts
+      Subscription:
+        - { Protocol: email, Endpoint: !Ref AlarmEmail }
+
+  DowntimeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: MakeMonitoring
+    Properties:
+      AlarmName: !Sub jm-site-${EnvName}-down
+      AlarmDescription: jamesjrmurray.co.uk is not responding (Route 53 health check)
+      Namespace: AWS/Route53
+      MetricName: HealthCheckStatus
+      Dimensions:
+        - { Name: HealthCheckId, Value: !Ref HealthCheck }
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlertTopic]
+      OKActions: [!Ref AlertTopic]
+
+Outputs:
+  BucketName: { Value: !Ref Bucket }
+  DistributionId: { Value: !Ref Distribution }
+  DistributionDomain: { Value: !GetAtt Distribution.DomainName }

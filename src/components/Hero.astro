@@ -1,0 +1,33 @@
+---
+import { hero, employerLogos } from '../content/site';
+---
+<section data-section="hero" class="mx-auto max-w-[1120px] px-5 pb-16 pt-14 sm:px-8 sm:pb-20 sm:pt-24">
+  <div class="flex flex-col gap-8 md:flex-row-reverse md:items-center md:justify-between md:gap-12">
+    <div class="relative shrink-0 self-start md:self-center">
+      <img src="/james-murray.webp" srcset="/james-murray-320.webp 320w, /james-murray.webp 480w" sizes="(min-width: 1024px) 220px, (min-width: 640px) 200px, 160px" alt="James Murray" width="480" height="480" loading="eager" fetchpriority="high" decoding="async"
+        class="h-[160px] w-[160px] rounded-full object-cover ring-2 ring-navy ring-offset-4 ring-offset-cream sm:h-[200px] sm:w-[200px] lg:h-[220px] lg:w-[220px]" />
+    </div>
+    <div class="min-w-0 flex-1">
+      <p class="mb-6 text-[15px] text-muted">{hero.eyebrow}</p>
+      <h1 class="max-w-[900px] font-display text-[40px] font-medium leading-[1.06] tracking-[-0.015em] text-navy sm:text-6xl lg:text-[68px]">
+        {hero.titleLine1}<br /><em class="text-red">{hero.titleLine2}</em>
+      </h1>
+    </div>
+  </div>
+  <p class="mt-8 max-w-[640px] text-lg leading-relaxed text-body sm:text-xl">{hero.summary}</p>
+  <div class="mt-8">
+    <p id="logos-label" class="text-xs uppercase tracking-[0.08em] text-muted">Where I’ve built products</p>
+    <ul aria-labelledby="logos-label" class="mt-3 flex flex-wrap items-center gap-x-8 gap-y-4">
+      {employerLogos.map((l) => (
+        <li>
+          <img src={l.src} alt={l.name} width={l.width} height={l.height} loading="eager" decoding="async"
+            class={`w-auto max-w-[150px] object-contain opacity-70 grayscale transition duration-200 hover:opacity-100 hover:grayscale-0 ${l.compact ? 'h-[30px] sm:h-[38px]' : 'h-[22px] sm:h-7'}`} />
+        </li>
+      ))}
+    </ul>
+  </div>
+  <div class="mt-10 flex flex-wrap items-center gap-6">
+    <a href="/work/toyota/" data-track="case_study_open" data-track-location="hero" class="inline-flex min-h-12 items-center rounded-full bg-navy px-7 text-base font-medium text-cream no-underline hover:bg-ink">Read the case study</a>
+    <a href="/#contact" class="link-underline text-base">Let’s talk →</a>
+  </div>
+</section>

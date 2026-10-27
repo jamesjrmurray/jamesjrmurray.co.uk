@@ -1,0 +1,15 @@
+---
+// Coloured strip so non-prod environments are obvious at a glance. Renders nothing on prod/local/test.
+interface Props { env?: string }
+const { env } = Astro.props;
+const styles: Record<string, { label: string; bg: string; fg: string }> = {
+  dev: { label: 'DEV', bg: '#F5B700', fg: '#1B1F2A' },
+  stage: { label: 'STAGING', bg: '#6B3FA0', fg: '#FFFFFF' },
+};
+const s = env ? styles[env] : undefined;
+---
+{s && (
+  <div data-env-banner={env} role="note" style={`background:${s.bg};color:${s.fg}`} class="px-5 py-2 text-center text-sm font-semibold tracking-wide">
+    {s.label} environment, not the live site
+  </div>
+)}

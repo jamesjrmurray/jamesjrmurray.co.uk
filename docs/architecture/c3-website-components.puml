@@ -1,0 +1,41 @@
+@startuml c3-website-components
+!include _common.puml
+!include C4P/C4_Component.puml
+title C3 · Components — the website (Astro static build)
+caption $VERIFIED
+
+Person(visitor, "Visitor")
+System_Ext(ga, "Google Analytics 4")
+System_Ext(crawler, "Search & AI crawlers")
+ContainerDb(s3, "Site bucket via CloudFront", "S3 + CloudFront", "Serves the built files", $sprite="CloudFront")
+
+Container_Boundary(site, "Static site (src/)") {
+  Component(pages, "Pages", "src/pages", "/ (index.astro), /work/toyota/, 404.astro")
+  Component(feeds, "Machine-readable routes", "src/pages/*.ts + @astrojs/sitemap", "robots.txt (prod: allow named search/AI bots; else Disallow), llms.txt, sitemap-index.xml")
+  Component(layout, "Base layout + Seo", "src/layouts/Base.astro, Seo.astro", "Head, font preloads, canonical/OG, JSON-LD (ProfilePage / Article), skip link")
+  Component(sections, "Section components", "src/components/*.astro", "Header (+Menu), Hero, Stats, CaseStudyTeaser, WorkCards, Posts, Talks, About, Career, Contact, Footer")
+  Component(content, "Typed content", "src/content/site.ts, toyota.ts, types.ts", "All copy, stats, roles, posts, talks, case study")
+  Component(posts, "Post rules", "src/lib/posts.ts", "isValidPost, latestPosts; talks.ts: isValidTalk, latestTalks (newest 3)")
+  Component(nav, "Mobile menu", "src/lib/mobile-nav.ts", "Progressive collapse < 768px, Escape closes")
+  Component(consent, "Consent", "src/lib/consent.ts + consent-ui.ts + ConsentBanner.astro", "Banner, Accept/Reject, Cookie settings, storage-safe")
+  Component(galoader, "GA loader", "src/lib/ga.ts", "loadGA after consent; clearGaCookies on decline")
+  Component(track, "Tracking", "src/lib/track.ts", "data-track click delegation + catch-all link_click / button_click for every other link and button, section_view, scroll 50/90%")
+}
+
+Rel(visitor, s3, "HTTPS")
+Rel(s3, pages, "Serves")
+Rel(crawler, feeds, "Reads")
+Rel(pages, layout, "Rendered inside")
+Rel(pages, sections, "Composes")
+Rel(sections, content, "Reads copy from")
+Rel(sections, posts, "Posts + Header use")
+Rel(layout, consent, "Mounts banner")
+Rel(layout, track, "initTracking()")
+Rel(sections, nav, "Header uses")
+Rel(consent, galoader, "Accept → loadGA")
+Rel(galoader, ga, "gtag.js + collect", "HTTPS")
+Rel(track, ga, "gtag('event') — no-op without consent")
+
+
+SHOW_LEGEND()
+@enduml

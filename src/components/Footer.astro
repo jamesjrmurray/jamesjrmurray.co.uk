@@ -1,0 +1,16 @@
+---
+import { github } from '../content/site';
+const year = new Date().getFullYear();
+---
+<footer class="border-t border-line">
+  <div class="mx-auto flex max-w-[1120px] flex-wrap justify-between gap-3 px-5 py-7 text-sm text-muted sm:px-8">
+    <span>James Murray</span>
+    <span class="flex flex-wrap items-center gap-3">
+      <span>© {year}</span>
+      <a href="https://www.linkedin.com/in/jamesjrmurray" data-track="linkedin_click" data-track-location="footer" class="inline-flex min-h-6 items-center text-muted hover:text-red">LinkedIn</a>
+      <a href={github} data-track="github_click" data-track-location="footer" class="inline-flex min-h-6 items-center text-muted hover:text-red">GitHub</a>
+      <a href="/privacy/" class="inline-flex min-h-6 items-center text-muted hover:text-red">Privacy</a>
+      <slot />
+    </span>
+  </div>
+</footer>

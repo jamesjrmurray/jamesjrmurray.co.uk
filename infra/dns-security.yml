@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: DNS hardening for jamesjrmurray.co.uk (no email sent or received; only Amazon may issue certificates)
+
+Parameters:
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Default: <zone-id>
+  Domain:
+    Type: String
+    Default: jamesjrmurray.co.uk
+
+Resources:
+  # The domain sends no email, so receivers should reject anything claiming to come from it.
+  NoMailSpf:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref Domain
+      Type: TXT
+      TTL: '3600'
+      ResourceRecords: ['"v=spf1 -all"']
+  NullMx:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref Domain
+      Type: MX
+      TTL: '3600'
+      ResourceRecords: ['0 .']
+  Dmarc:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub _dmarc.${Domain}
+      Type: TXT
+      TTL: '3600'
+      ResourceRecords: ['"v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s"']
+  WildcardSpf:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub '*.${Domain}'
+      Type: TXT
+      TTL: '3600'
+      ResourceRecords: ['"v=spf1 -all"']
+
+  # Only Amazon (ACM) may issue certificates; no wildcard certificates at all.
+  Caa:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref Domain
+      Type: CAA
+      TTL: '3600'
+      ResourceRecords:
+        - '0 issue "amazon.com"'
+        - '0 issue "amazontrust.com"'
+        - '0 issue "awstrust.com"'
+        - '0 issue "amazonaws.com"'
+        - '0 issuewild ";"'

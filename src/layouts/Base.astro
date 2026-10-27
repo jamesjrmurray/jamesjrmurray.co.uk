@@ -1,0 +1,51 @@
+---
+import '../styles/global.css';
+import frauncesWoff2 from '@fontsource-variable/fraunces/files/fraunces-latin-wght-normal.woff2?url';
+import frauncesItalicWoff2 from '../assets/fonts/fraunces-italic-500-subset.woff2?url';
+import bodyWoff2 from '@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2?url';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ConsentBanner from '../components/ConsentBanner.astro';
+import Seo from '../components/Seo.astro';
+import EnvBanner from '../components/EnvBanner.astro';
+import { posts, projects, talks } from '../content/site';
+import { latestPosts } from '../lib/posts';
+import { latestTalks } from '../lib/talks';
+
+// preloadItalic: the page has red italic accents above the fold (the homepage hero).
+interface Props { title: string; description: string; path: string; jsonLd?: Record<string, unknown>; ogImage?: string; noindex?: boolean; preloadItalic?: boolean }
+const { title, description, path, jsonLd, ogImage, noindex, preloadItalic } = Astro.props;
+const gaId = import.meta.env.PUBLIC_GA_ID || undefined;
+const siteEnv = process.env.SITE_ENV;
+const envPrefix = siteEnv === 'dev' ? 'DEV · ' : siteEnv === 'stage' ? 'STAGING · ' : '';
+const showWriting = latestPosts(posts).length > 0;
+const showTalks = latestTalks(talks).length > 0;
+---
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preload" as="font" type="font/woff2" href={frauncesWoff2} crossorigin />
+    {preloadItalic && <link rel="preload" as="font" type="font/woff2" href={frauncesItalicWoff2} crossorigin />}
+    <link rel="preload" as="font" type="font/woff2" href={bodyWoff2} crossorigin />
+    <Seo title={envPrefix + title} description={description} path={path} jsonLd={jsonLd} ogImage={ogImage} noindex={noindex} />
+  </head>
+  <body class="bg-cream font-sans text-ink">
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-navy focus:px-5 focus:py-3 focus:text-cream">Skip to content</a>
+    <ConsentBanner gaId={gaId} />
+    <EnvBanner env={siteEnv} />
+    <Header showWriting={showWriting} showTalks={showTalks} showProjects={projects.length > 0} />
+    <main id="main" tabindex="-1" class="focus:outline-none"><slot /></main>
+    <Footer>
+      {gaId && <button type="button" data-consent-open hidden class="min-h-11 text-muted underline hover:text-red">Cookie settings</button>}
+    </Footer>
+    <script>
+      import { initTracking } from '../lib/track';
+      initTracking();
+    </script>
+  </body>
+</html>

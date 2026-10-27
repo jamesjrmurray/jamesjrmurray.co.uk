@@ -1,0 +1,31 @@
+@startuml c1-system-context
+!include _common.puml
+!include C4P/C4_Context.puml
+title C1 · System Context: jamesjrmurray.co.uk
+caption $VERIFIED
+
+Person(james, "James Murray", "Owner. Edits content in the repo, approves releases, receives alerts.")
+Person(visitor, "Visitor", "Anyone reading about James's work, on desktop or phone.")
+Person_Ext(crawler, "Search & AI crawlers", "Googlebot, Bingbot, GPTBot, ClaudeBot, PerplexityBot… Read robots.txt, sitemap, llms.txt")
+
+System(site, "jamesjrmurray.co.uk", "Static personal site: homepage, case studies, privacy notice, 404. Built with Astro, hosted on AWS.")
+
+System_Ext(github, "GitHub", "Private repo jamesjrmurray/Jamesjrmurray_web + GitHub Actions (CI and Deploy)")
+System_Ext(aws, "AWS account <account-id>", "Route 53, CloudFront, S3, ACM, IAM, CloudWatch, SNS, Budgets; security: CloudTrail, GuardDuty, IAM Access Analyzer", $sprite="CloudFront")
+System_Ext(ga, "Google Analytics 4", "<ga-id>, loaded only after cookie consent")
+System_Ext(linkedin, "LinkedIn", "Profile, articles and talks the site links to")
+System_Ext(email, "James's email", "Receives downtime and budget alerts")
+System_Ext(mailrx, "Email providers", "Gmail, Outlook… check SPF/DMARC; the domain sends no email, so mail claiming to be from it is rejected")
+
+Rel(visitor, site, "Reads and clicks", "HTTPS")
+Rel(crawler, site, "Indexes (prod only)", "HTTPS")
+Rel(james, github, "Pushes content/code, tags releases, runs prod deploy", "git / web")
+Rel(github, aws, "Deploys static build", "OIDC role + S3/CloudFront APIs")
+Rel(site, aws, "Served by", "CloudFront + S3")
+Rel(site, ga, "Page views + events after Accept", "HTTPS")
+Rel(site, linkedin, "Links out to")
+Rel(aws, email, "Downtime / budget alerts", "SNS / Budgets email")
+Rel(mailrx, aws, "Look up SPF, DMARC, null MX", "DNS (Route 53)")
+
+SHOW_LEGEND()
+@enduml

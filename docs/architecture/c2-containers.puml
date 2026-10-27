@@ -1,0 +1,67 @@
+@startuml c2-containers
+!include _common.puml
+!include C4P/C4_Container.puml
+title C2 · Containers: jamesjrmurray.co.uk (prod shown; dev. and staging. are the same stack without monitoring or versioning, open for now, and send X-Robots-Tag: noindex)
+caption $VERIFIED
+
+Person(visitor, "Visitor", "Browser")
+Person(james, "James Murray", "Owner")
+
+System_Boundary(browser, "Visitor's browser") {
+  Container(spa, "Static site", "Astro 7 HTML/CSS + small TS modules", "Pages, consent banner, tracking, contact form, mobile menu")
+}
+
+AWSCloudGroup(cloud) {
+  AWSAccountGroup(acct, "Account <account-id>") {
+    Container(zone, "Hosted zone jamesjrmurray.co.uk", "Route 53 (<zone-id>)", "A/AAAA aliases (apex, www, dev, staging); ACM CNAMEs; null MX + SPF -all + DMARC p=reject (no email); CAA: Amazon only", $sprite="Route53HostedZone")
+    Container(acm, "TLS certificate", "ACM (us-east-1)", "jamesjrmurray.co.uk + www, DNS-validated", $sprite="CertificateManager")
+    RegionGroup(region, "us-east-1") {
+      Container(cf, "Distribution (prod)", "CloudFront <prod-dist-id>", "HTTP/2+3, redirect-to-HTTPS, CachingOptimized, 403/404 → /404.html", $sprite="CloudFront")
+      Container(fn, "viewer-request", "CloudFront Function (cloudfront-js-2.0)", "Clean URLs (/x → /x/index.html); any other host (www, *.cloudfront.net) 301 → canonical", $sprite="CloudFrontFunctions")
+      Container(hdr, "Response headers policy", "CloudFront", "Strict CSP (no inline scripts), HSTS, nosniff, DENY framing, Permissions-Policy, COOP/CORP; Server header removed; noindex outside prod", $sprite="CloudFront")
+      ContainerDb(s3, "Site bucket", "S3 jm-site-prod-<account-id> (private, SSE-S3, OAC)", "Built dist/: HTML no-cache, /_astro immutable; versioned, old versions kept 30 days", $sprite="SimpleStorageServiceBucket")
+      Container(hc, "Health check", "Route 53", "HTTPS GET / every 30s", $sprite="Route53")
+      Container(alarm, "jm-site-prod-down", "CloudWatch alarm", "HealthCheckStatus < 1 for 3 min", $sprite="CloudWatchAlarm")
+      Container(sns, "jm-site-prod-alerts", "SNS topic", "Email subscription", $sprite="SimpleNotificationService")
+      Container(oidc, "GitHub OIDC provider", "IAM", "token.actions.githubusercontent.com", $sprite="IdentityandAccessManagement")
+      Container(role, "jm-site-github-deploy-prod", "IAM role", "Prod bucket + distribution only; trusts the GitHub prod environment only (dev/stage use jm-site-github-deploy)", $sprite="IdentityAccessManagementRole")
+      Container(cfn, "Stacks", "CloudFormation", "jm-site-dev / -stage / -prod, jm-github-oidc, jm-account-security, jm-dns-security", $sprite="CloudFormation")
+      Container(trail, "jm-account-trail", "CloudTrail", "All regions, log file validation; logs to private bucket jm-cloudtrail-*, kept 1 year", $sprite="CloudTrail")
+      Container(gd, "Threat detection", "GuardDuty", "Account + S3 data events, findings every 6h", $sprite="GuardDuty")
+      Container(aa, "jm-account-analyzer", "IAM Access Analyzer", "Flags anything shared outside the account", $sprite="IdentityAccessManagementIAMAccessAnalyzer")
+      Container(budget, "jm-site-monthly", "AWS Budgets", "$10/month, email at 80% actual / 100% forecast", $sprite="Budgets")
+    }
+    Container(sso, "IAM Identity Center", "eu-west-2", "James's admin sign-in for the AWS CLI (profile jm)", $sprite="IAMIdentityCenter")
+    Container(pab, "S3 Block Public Access", "Account setting", "No bucket can be made public", $sprite="SimpleStorageService")
+  }
+}
+
+System_Ext(gha, "GitHub Actions", "CI on every push; Deploy: develop→dev, v* tag→stage, manual Run workflow→prod")
+System_Ext(ga, "Google Analytics 4", "Consent-gated")
+System_Ext(email, "James's email")
+
+Rel(visitor, zone, "Resolves jamesjrmurray.co.uk", "DNS")
+Rel(visitor, cf, "GET pages", "HTTPS")
+Rel(cf, fn, "Runs on every viewer request")
+Rel(cf, hdr, "Adds headers to responses")
+Rel(cf, acm, "Presents certificate")
+Rel(cf, s3, "Fetches objects", "OAC (SigV4)")
+Rel(cf, spa, "Delivers")
+Rel(spa, ga, "gtag events after Accept", "HTTPS")
+Rel(hc, cf, "Probes", "HTTPS")
+Rel(hc, alarm, "HealthCheckStatus metric")
+Rel(alarm, sns, "ALARM / OK")
+Rel(sns, email, "Notifies", "email")
+Rel(budget, email, "Notifies", "email")
+Rel(james, gha, "push / tag / Run workflow")
+Rel(gha, oidc, "Presents GitHub OIDC token")
+Rel(oidc, role, "AssumeRoleWithWebIdentity", "STS")
+Rel(gha, s3, "s3 sync (as role)", "HTTPS")
+Rel(gha, cf, "CreateInvalidation /* (as role)", "HTTPS")
+Rel(james, sso, "aws sso login --profile jm")
+Rel(james, cfn, "infra/deploy-stack.sh", "AWS CLI")
+Rel(trail, s3, "Records API activity on")
+Rel(gd, trail, "Analyses")
+
+SHOW_LEGEND()
+@enduml

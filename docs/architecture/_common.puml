@@ -1,0 +1,27 @@
+' Shared settings for all jamesjrmurray.co.uk C4 diagrams.
+' Libraries pinned: C4-PlantUML v2.14.0, aws-icons-for-plantuml v23.1 (checked 2026-10-23).
+!pragma layout smetana
+!define C4P https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v23.1/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/Groups/all.puml
+!include AWSPuml/NetworkingContentDelivery/Route53.puml
+!include AWSPuml/NetworkingContentDelivery/Route53HostedZone.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFrontFunctions.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+!include AWSPuml/Storage/SimpleStorageServiceBucket.puml
+!include AWSPuml/SecurityIdentityCompliance/CertificateManager.puml
+!include AWSPuml/SecurityIdentityCompliance/IdentityandAccessManagement.puml
+!include AWSPuml/SecurityIdentityCompliance/IdentityAccessManagementRole.puml
+!include AWSPuml/SecurityIdentityCompliance/IAMIdentityCenter.puml
+!include AWSPuml/ManagementGovernance/CloudWatch.puml
+!include AWSPuml/ManagementGovernance/CloudWatchAlarm.puml
+!include AWSPuml/ManagementGovernance/CloudFormation.puml
+!include AWSPuml/ManagementGovernance/CloudFormationStack.puml
+!include AWSPuml/ApplicationIntegration/SimpleNotificationService.puml
+!include AWSPuml/CloudFinancialManagement/Budgets.puml
+!include AWSPuml/SecurityIdentityCompliance/GuardDuty.puml
+!include AWSPuml/SecurityIdentityCompliance/IdentityAccessManagementIAMAccessAnalyzer.puml
+!include AWSPuml/ManagementGovernance/CloudTrail.puml
+!$VERIFIED = "Last verified: 2026-10-27 against live AWS stacks (account <account-id>, us-east-1)"

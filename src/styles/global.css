@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/* Web fonts use font-display: optional, not swap. They are preloaded, so they are almost always ready for
+   the first paint; when one is not (a slow first visit), that page keeps the fallback font instead of
+   jumping when the web font arrives and rewraps the text. tests/unit/assets.test.ts holds this. */
+/* instrument-sans-latin-ext-wght-normal */
+@font-face {
+  font-family: 'Instrument Sans Variable';
+  font-style: normal;
+  font-display: optional;
+  font-weight: 400 700;
+  src: url("../../node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-ext-wght-normal.woff2") format('woff2-variations');
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+/* instrument-sans-latin-wght-normal */
+@font-face {
+  font-family: 'Instrument Sans Variable';
+  font-style: normal;
+  font-display: optional;
+  font-weight: 400 700;
+  src: url("../../node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2") format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+/* fraunces-latin-ext-wght-normal */
+@font-face {
+  font-family: 'Fraunces Variable';
+  font-style: normal;
+  font-display: optional;
+  font-weight: 100 900;
+  src: url("../../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-ext-wght-normal.woff2") format('woff2-variations');
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+/* fraunces-latin-wght-normal */
+@font-face {
+  font-family: 'Fraunces Variable';
+  font-style: normal;
+  font-display: optional;
+  font-weight: 100 900;
+  src: url("../../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-wght-normal.woff2") format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+/* Italic headings: small fixed-weight subsets (scripts/fonts.sh) instead of the 45 KB variable font.
+   500 is the red accents; 400 is the case-study lesson. */
+@font-face {
+  font-family: "Fraunces Variable";
+  font-style: italic;
+  font-weight: 500;
+  font-display: optional;
+  src: url("../assets/fonts/fraunces-italic-500-subset.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Fraunces Variable";
+  font-style: italic;
+  font-weight: 400;
+  font-display: optional;
+  src: url("../assets/fonts/fraunces-italic-400-subset.woff2") format("woff2");
+}
+
+@theme {
+  --color-cream: #FAF7F2;
+  --color-navy: #0B2545;
+  --color-red: #D7263D;
+  --color-ink: #22201C;
+  --color-body: #4A463F;
+  --color-muted: #6E695F;
+  --color-line: #E6E0D6;
+
+  --font-display: "Fraunces Variable", Georgia, serif;
+  /* Body font — the ONE place to change it (plus its @font-face above and the preload in Base.astro). */
+  --font-sans: "Instrument Sans Variable", system-ui, sans-serif;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; }
+}
+
+/* On paper: the content only, no cookie banner or site controls. */
+@media print {
+  [data-consent], [data-consent-open], [data-menu-toggle], nav[aria-label="Main"] { display: none !important; }
+}
+body { -webkit-font-smoothing: antialiased; }
+
+:focus-visible {
+  outline: 3px solid var(--color-red);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.link-underline {
+  color: var(--color-navy);
+  text-decoration: none;
+  border-bottom: 2px solid var(--color-red);
+  padding-bottom: 2px;
+}
+.link-underline:hover { color: var(--color-red); }
+
+/* Mobile menu (src/lib/mobile-nav.ts). With JavaScript on, it is folded from the first paint, so the
+   page does not jump when the script runs. Without JavaScript the links stay open and the button hides.
+   Browsers that don't know the scripting media feature fold it once the script marks the header ready. */
+@media (max-width: 767.98px) and (scripting: enabled) {
+  #site-nav:not([data-open]) { display: none; }
+}
+@media (max-width: 767.98px) {
+  [data-site-header][data-menu-ready] #site-nav:not([data-open]) { display: none; }
+}
+@media (scripting: none) {
+  [data-menu-toggle] { display: none !important; }
+}

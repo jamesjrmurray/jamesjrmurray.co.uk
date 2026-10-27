@@ -1,0 +1,35 @@
+---
+import type { Project } from '../content/types';
+
+interface Props { projects: Project[] }
+const { projects } = Astro.props;
+// One project spans the row (text beside its image); two or more share it.
+const single = projects.length === 1;
+---
+{projects.length > 0 && (
+  <section data-section="projects" id="projects" class="mx-auto max-w-[1120px] scroll-mt-6 px-5 pt-24 sm:px-8">
+    <h2 class="mb-8 font-display text-[32px] font-medium text-navy sm:text-4xl">Projects</h2>
+    <div class={`grid gap-6 ${single ? '' : 'md:grid-cols-2'}`}>
+      {projects.map((p) => (
+        <article class={`flex flex-col gap-8 rounded-2xl border border-line bg-white p-7 sm:p-8 ${single ? 'md:flex-row md:items-center' : ''}`}>
+          <div class="flex min-w-0 flex-1 flex-col gap-3">
+            <p class="text-sm text-red">{p.label}</p>
+            <h3 class="font-display text-2xl font-medium leading-snug text-balance text-navy">{p.title}</h3>
+            <p class="text-base leading-relaxed text-body">{p.outcome}</p>
+            <ul class="mt-1 flex flex-wrap gap-2">
+              {p.tags.map((t) => <li class="rounded-full border border-line px-3 py-1 text-xs text-muted">{t}</li>)}
+            </ul>
+            <div class="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-[15px]">
+              <a href={p.pageUrl} data-track="project_open" data-track-title={p.title} class="link-underline">Read how it was built →</a>
+              {p.codeUrl && <a href={p.codeUrl} data-track="github_click" data-track-location="project" class="link-underline">Code on GitHub →</a>}
+            </div>
+          </div>
+          {p.image && (
+            <img src={p.image.src} srcset={p.image.srcset} sizes={single ? '(min-width: 768px) 520px, calc(100vw - 64px)' : '(min-width: 768px) 360px, calc(100vw - 64px)'} alt={p.image.alt} width={p.image.width} height={p.image.height} loading="lazy" decoding="async"
+              class={`h-auto w-full rounded-xl border border-line ${single ? 'md:w-1/2' : ''}`} />
+          )}
+        </article>
+      ))}
+    </div>
+  </section>
+)}

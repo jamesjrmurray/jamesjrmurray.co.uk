@@ -1,0 +1,18 @@
+---
+import { contact } from '../content/site';
+interface Props { hasCv: boolean }
+const { hasCv } = Astro.props;
+---
+<section data-section="contact" id="contact" class="mx-auto flex max-w-[1120px] scroll-mt-6 flex-wrap gap-14 px-5 pb-24 pt-24 sm:px-8 sm:pt-28">
+  <div class="min-w-0 flex-[1_1_360px]">
+    <h2 class="font-display text-[32px] font-medium leading-tight text-navy sm:text-[40px]">
+      {contact.headingLead} <em class="text-red">{contact.headingAccent}</em>
+    </h2>
+    <p class="mt-5 text-lg leading-relaxed text-body">The quickest way to reach me is a message on LinkedIn.</p>
+    <ul class="mt-7 flex flex-col items-start gap-4 text-base">
+      <li><a href={contact.linkedin} data-track="linkedin_click" data-track-location="contact" class="inline-flex min-h-12 items-center rounded-full bg-navy px-7 text-base font-medium text-cream no-underline hover:bg-ink">Message me on LinkedIn</a></li>
+      <li><a href={contact.github} data-track="github_click" data-track-location="contact" class="link-underline">github.com/jamesjrmurray →</a></li>
+      {hasCv && <li><a href={contact.cvPath} data-track="cv_download" class="link-underline" download>Download CV (PDF) →</a></li>}
+    </ul>
+  </div>
+</section>

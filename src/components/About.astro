@@ -1,0 +1,12 @@
+---
+import { about, contact } from '../content/site';
+---
+<section data-section="about" id="about" class="mx-auto flex max-w-[1120px] scroll-mt-6 flex-wrap gap-12 px-5 pt-24 sm:px-8 sm:pt-28">
+  <h2 class="flex-[1_1_280px] font-display text-[32px] font-medium leading-tight text-navy sm:text-4xl">
+    {about.headingLead} <em class="text-red">{about.headingAccent}</em>
+  </h2>
+  <div class="flex min-w-0 flex-[2_1_520px] flex-col gap-5 text-[17px] leading-[1.75] text-body sm:text-lg">
+    {about.paragraphs.map((t) => <p>{t}</p>)}
+    <p class="mt-2"><a href={contact.linkedin} data-track="linkedin_click" data-track-location="about" class="link-underline">LinkedIn →</a></p>
+  </div>
+</section>
