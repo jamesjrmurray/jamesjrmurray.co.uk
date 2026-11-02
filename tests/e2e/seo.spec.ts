@@ -4,12 +4,15 @@ import { stats, talks } from '../../src/content/site';
 test('homepage has canonical, Open Graph and Person data', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'http://localhost:4400/');
-  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /James Murray/);
+  await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute('content', 'James JR Murray');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /James JR Murray/);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', 'http://localhost:4400/og.png');
   const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').innerText());
   expect(ld['@type']).toBe('ProfilePage');
   expect(ld.mainEntity['@type']).toBe('Person');
-  expect(ld.mainEntity.name).toBe('James Murray');
+  expect(ld.mainEntity.name).toBe('James JR Murray');
+  expect(ld.mainEntity.jobTitle).toBe('Lead Product Manager');
+  expect(ld.mainEntity.alternateName).toBe('James Murray');
   expect(ld.mainEntity.sameAs).toContain('https://www.linkedin.com/in/jamesjrmurray');
   expect(ld.mainEntity.sameAs).toContain('https://github.com/jamesjrmurray');
   expect(JSON.stringify(ld)).not.toMatch(/seeking|telephone|email/i);
@@ -24,7 +27,9 @@ test('llms.txt summarises the site as it is: every section and page, nothing tha
   const res = await request.get('/llms.txt');
   expect(res.status()).toBe(200);
   const body = await res.text();
-  expect(body).toMatch(/^# James Murray/);
+  expect(body).toMatch(/^# James JR Murray/);
+  expect(body).toContain('https://www.recruited.tech/blog/preparing-data-for-ai');
+  expect(body).toContain('https://datadecoded.com/mcr/speakers/james-murray/');
   expect(body).toContain('/work/toyota/');
   expect(body).toContain('/work/this-website/');
   expect(body).not.toMatch(/writing/i); // no posts yet, so no Writing section
@@ -74,7 +79,8 @@ test('case study page carries Article structured data authored by James', async 
   const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').innerText());
   expect(ld['@type']).toBe('Article');
   expect(ld.headline).toBe('Building the data foundations for AI in connected vehicles');
-  expect(ld.author.name).toBe('James Murray');
+  expect(ld.author.name).toBe('James JR Murray');
+  expect(ld.author.jobTitle).toBe('Lead Product Manager');
 });
 
 test('each shareable page has its own social preview image', async ({ page, request }) => {

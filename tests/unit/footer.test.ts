@@ -8,6 +8,8 @@ describe('Footer', () => {
     const html = await c.renderToString(Footer);
     expect(html).toContain('James Murray');
     expect(html).toContain('linkedin.com/in/jamesjrmurray');
+    expect(html).toContain('mailto:jamesjrmurray@gmail.com?subject=General%20enquiry');
+    expect(html).toContain('>Email</a>');
     expect(html).toMatch(/<a [^>]*href="https:\/\/github\.com\/jamesjrmurray"[^>]*data-track="github_click"[^>]*data-track-location="footer"[^>]*>GitHub<\/a>/);
     expect(html).not.toContain('Lenham');
   });

@@ -8,6 +8,8 @@ describe('Contact component', () => {
     const html = await c.renderToString(Contact, { props: { hasCv: false } });
     expect(html).not.toContain('<form');
     expect(html).toContain('linkedin.com/in/jamesjrmurray');
+    expect(html).toContain('mailto:jamesjrmurray@gmail.com?subject=General%20enquiry');
+    expect(html).toContain('>Email me</a>');
     expect(html).toMatch(/<a [^>]*href="https:\/\/github\.com\/jamesjrmurray"[^>]*data-track-location="contact"[^>]*>github\.com\/jamesjrmurray →<\/a>/);
   });
   it('shows the CV link only when the file exists', async () => {

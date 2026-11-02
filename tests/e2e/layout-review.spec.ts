@@ -28,9 +28,11 @@ test('contact makes LinkedIn the clear next step', async ({ page }) => {
   const contact = page.locator('#contact');
   await expect(contact.getByText('The quickest way to reach me is a message on LinkedIn.')).toBeVisible();
   await expect(contact.getByRole('link', { name: 'Message me on LinkedIn' })).toHaveAttribute('href', 'https://www.linkedin.com/in/jamesjrmurray');
+  await expect(contact.getByRole('link', { name: 'Email me', exact: true })).toHaveAttribute('href', 'mailto:jamesjrmurray@gmail.com?subject=General%20enquiry');
 });
 
-test('the hero does not repeat the name under the header', async ({ page }) => {
+test('the hero names James JR Murray and keeps the role line', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-section="hero"] p').first()).toHaveText('Product leader for AI and data');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('James JR Murray');
 });

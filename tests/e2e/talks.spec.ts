@@ -15,10 +15,28 @@ test('talks: one card per talk, each with a loaded image and a link to the Linke
   }
 });
 
-test('talks: header links to the section', async ({ page }) => {
+test('speaking is in the main nav and opens the talks section', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');
-  await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Talks' })).toHaveAttribute('href', '/#talks');
+  const link = page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Speaking' });
+  await expect(link).toHaveAttribute('href', '/#talks');
+  await expect(page.locator('#talks')).toBeVisible();
+});
+
+test('speaking is in the phone menu', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Speaking' })).toBeVisible();
+});
+
+test('talks offer an invite, a speaking email, and the two public profiles', async ({ page }) => {
+  await page.goto('/');
+  const section = page.locator('#talks');
+  await expect(section.getByRole('link', { name: 'Invite me to speak' })).toHaveAttribute('href', 'https://www.linkedin.com/in/jamesjrmurray');
+  await expect(section.getByRole('link', { name: 'Email about speaking' })).toHaveAttribute('href', 'mailto:jamesjrmurray@gmail.com?subject=Speaking%20enquiry');
+  await expect(section.getByRole('link', { name: 'Recruited article' })).toHaveAttribute('href', 'https://www.recruited.tech/blog/preparing-data-for-ai');
+  await expect(section.getByRole('link', { name: 'Data Decoded speaker profile' })).toHaveAttribute('href', 'https://datadecoded.com/mcr/speakers/james-murray/');
 });
 
 test('talks: phone layout stacks cards with no sideways scroll', async ({ page }) => {

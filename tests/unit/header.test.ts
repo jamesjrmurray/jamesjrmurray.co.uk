@@ -14,10 +14,13 @@ describe('Header', () => {
     const html = await c.renderToString(Header, { props: { showWriting: true } });
     expect(html).toContain('href="/#writing"');
   });
-  it('shows the Talks link only when talks exist', async () => {
+  it('shows the Speaking link only when talks exist', async () => {
     const c = await AstroContainer.create();
     expect(await c.renderToString(Header, { props: { showWriting: false } })).not.toContain('/#talks');
-    expect(await c.renderToString(Header, { props: { showWriting: false, showTalks: true } })).toContain('href="/#talks"');
+    const html = await c.renderToString(Header, { props: { showWriting: false, showTalks: true } });
+    expect(html).toContain('href="/#talks"');
+    expect(html).toContain('>Speaking</a>');
+    expect(html).not.toContain('>Talks</a>');
   });
   it('shows the Projects link only when projects exist', async () => {
     const c = await AstroContainer.create();

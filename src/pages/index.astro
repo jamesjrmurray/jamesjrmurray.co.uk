@@ -9,14 +9,14 @@ import Talks from '../components/Talks.astro';
 import Projects from '../components/Projects.astro';
 import About from '../components/About.astro';
 import Career from '../components/Career.astro';
-import { posts, projects, talks, yearsExperience } from '../content/site';
+import { name, posts, projects, talks, yearsExperience } from '../content/site';
 import fs from 'node:fs';
 import path from 'node:path';
 import Contact from '../components/Contact.astro';
 const hasCv = fs.existsSync(path.join(process.cwd(), 'public', 'James-Murray-CV.pdf'));
 ---
 <Base
-  title="James Murray · Product leader for AI and data"
+  title={`${name} · Product leader for AI and data`}
   description={`Product leader for data platforms and AI. ${yearsExperience} years from systems engineering to leading product at Holiday Extras and Toyota Connected Europe.`}
   path="/"
   preloadItalic
