@@ -1,5 +1,6 @@
 ---
-import { github } from '../content/site';
+import { github, mailSubjects } from '../content/site';
+import EmailLink from './EmailLink.astro';
 const year = new Date().getFullYear();
 ---
 <footer class="border-t border-line">
@@ -8,6 +9,7 @@ const year = new Date().getFullYear();
     <span class="flex flex-wrap items-center gap-3">
       <span>© {year}</span>
       <a href="https://www.linkedin.com/in/jamesjrmurray" data-track="linkedin_click" data-track-location="footer" class="inline-flex min-h-6 items-center text-muted hover:text-red">LinkedIn</a>
+      <EmailLink subject={mailSubjects.general} location="footer" class="inline-flex min-h-6 items-center text-muted hover:text-red">Email</EmailLink>
       <a href={github} data-track="github_click" data-track-location="footer" class="inline-flex min-h-6 items-center text-muted hover:text-red">GitHub</a>
       <a href="/privacy/" class="inline-flex min-h-6 items-center text-muted hover:text-red">Privacy</a>
       <slot />

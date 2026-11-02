@@ -1,0 +1,7 @@
+---
+import { mailto } from '../content/site';
+
+interface Props { subject: string; location: string; class?: string }
+const { subject, location, class: className = 'link-underline' } = Astro.props;
+---
+<a href={mailto(subject)} data-track="email_click" data-track-location={location} class={className}><slot /></a>

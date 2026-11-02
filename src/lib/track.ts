@@ -1,7 +1,7 @@
 // GA4 events. gtag exists only after the visitor accepts (see consent-ui.ts and ga.ts); until then,
 // and on sites without a GA ID, every call is a no-op and nothing leaves the browser.
 export const EVENTS = [
-  'cv_download', 'linkedin_click',
+  'cv_download', 'linkedin_click', 'email_click',
   'case_study_open', 'case_study_read', 'post_click', 'talk_click', 'project_open', 'github_click', 'link_click', 'button_click', 'nav_click', 'section_view', 'scroll_depth', 'page_not_found',
 ] as const;
 export type EventName = (typeof EVENTS)[number];

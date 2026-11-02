@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { github, hero, posts, projects, stats, talks } from '../content/site';
+import { github, hero, name, posts, profiles, projects, stats, talks } from '../content/site';
 import { latestPosts } from '../lib/posts';
 import { latestTalks } from '../lib/talks';
 import { thisWebsite } from '../content/this-website';
@@ -10,7 +10,7 @@ export const GET: APIRoute = ({ site }) => {
   // Sections listed in homepage order, and only when they have something in them.
   const sections = ['case study', 'selected work', projects.length && 'projects', latestPosts(posts).length && 'writing', latestTalks(talks).length && 'talks', 'about', 'career', 'contact'].filter(Boolean);
   const body = [
-    '# James Murray',
+    `# ${name}`,
     '',
     `> ${hero.summary}`,
     '',
@@ -28,6 +28,8 @@ export const GET: APIRoute = ({ site }) => {
     '## Elsewhere',
     '- [LinkedIn](https://www.linkedin.com/in/jamesjrmurray)',
     `- [GitHub](${github}): including the code for this site`,
+    `- [Recruited article](${profiles.recruited})`,
+    `- [Data Decoded speaker profile](${profiles.dataDecoded})`,
     '',
   ].join('\n');
   return new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });

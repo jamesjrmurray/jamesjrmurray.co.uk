@@ -2,6 +2,28 @@ import type { Post, Project, Role, Stat, Talk, WorkItem } from './types';
 
 export const github = 'https://github.com/jamesjrmurray';
 
+// Full name in the hero, titles and structured data, so this James is not confused with another.
+export const name = 'James JR Murray';
+export const jobTitle = 'Lead Product Manager';
+export const emailAddress = 'jamesjrmurray@gmail.com';
+
+export const mailSubjects = {
+  speaking: 'Speaking enquiry',
+  role: 'Role enquiry',
+  general: 'General enquiry',
+} as const;
+
+export function mailto(subject: string): string {
+  return `mailto:${emailAddress}?subject=${encodeURIComponent(subject)}`;
+}
+
+// Public pages about this James: the Recruited article (Oct 2025, bylined Senior Product Owner
+// at Toyota Connected Europe) and his Data Decoded Manchester speaker profile.
+export const profiles = {
+  recruited: 'https://www.recruited.tech/blog/preparing-data-for-ai',
+  dataDecoded: 'https://datadecoded.com/mcr/speakers/james-murray/',
+};
+
 // Years of experience count from the first engineering role, so the number moves on by itself each year.
 export const CAREER_START = 2005;
 export const yearsExperience = String(new Date().getFullYear() - CAREER_START);
@@ -99,14 +121,14 @@ export const about = {
   headingAccent: 'systems second.',
   paragraphs: [
     "I’ve worked on both sides: the technology and the business. Engineering taught me what’s possible. Product thinking changes the question: not just “how do we build this?” but “should we?” and “will it hold up for the people who depend on it?”",
-    "Today I’m Area Product Owner at Holiday Extras, leading a team of product owners across one area of the business. Before that, I spent five years turning connected-vehicle data into AI products at Toyota Connected Europe.",
+    `Today I’m ${jobTitle} at Holiday Extras, leading a team of product owners across one area of the business. Before that, I spent five years turning connected-vehicle data into AI products at Toyota Connected Europe.`,
     'Outside work: parish councillor in Lenham, Kent; committee member of the Lenham Meadows Trust; charity fundraiser for Demelza Hospice Care for Children; sports fanatic; and wine taster with ambitions to become a connoisseur.',
   ],
 };
 
 export const career: { roles: Role[]; engineering: Role } = {
   roles: [
-    { dates: '2026–now', title: 'Area Product Owner', org: 'Holiday Extras', note: 'Leading a product area and its product owners' },
+    { dates: '2026–now', title: jobTitle, org: 'Holiday Extras', note: 'Leading a product area and its product owners' },
     { dates: '2021–2026', title: 'Senior Product Owner (Data)', org: 'Toyota Connected Europe', note: 'Petabyte-scale data platform; two AI products to production' },
     { dates: '2020–2021', title: 'E-commerce Product Owner', org: 'RS Components', note: 'Checkout across 31 markets; PSD2 payments' },
     { dates: '2019–2020', title: 'Senior Product Manager', org: 'Verv', note: 'IoT and ML predictive maintenance; blockchain energy trading' },

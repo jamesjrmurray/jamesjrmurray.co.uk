@@ -1,0 +1,9 @@
+---
+import { profiles } from '../content/site';
+interface Props { class?: string }
+const { class: className = 'mt-2' } = Astro.props;
+---
+<p class:list={['flex flex-wrap gap-x-6 gap-y-2 text-[15px]', className]}>
+  <a href={profiles.recruited} class="link-underline">Recruited article →</a>
+  <a href={profiles.dataDecoded} class="link-underline">Data Decoded speaker profile →</a>
+</p>

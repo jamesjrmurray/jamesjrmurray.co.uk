@@ -15,6 +15,16 @@ describe('site content', () => {
   it('never says the Direct Line figure is annual (unconfirmed)', () => {
     expect(JSON.stringify(site)).not.toMatch(/annual/i);
   });
+  it('uses the current job title and the full name', () => {
+    expect(site.jobTitle).toBe('Lead Product Manager');
+    expect(site.name).toBe('James JR Murray');
+    expect(site.career.roles[0].title).toBe(site.jobTitle);
+    expect(site.about.paragraphs.join('\n')).toContain('Lead Product Manager at Holiday Extras');
+    expect(JSON.stringify(site)).not.toContain('Area Product Owner');
+    expect(site.mailto('Speaking enquiry')).toBe('mailto:jamesjrmurray@gmail.com?subject=Speaking%20enquiry');
+    expect(site.profiles.recruited).toBe('https://www.recruited.tech/blog/preparing-data-for-ai');
+    expect(site.profiles.dataDecoded).toBe('https://datadecoded.com/mcr/speakers/james-murray/');
+  });
 });
 
 describe('toyota case study', () => {

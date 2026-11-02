@@ -1,5 +1,5 @@
 ---
-import { github } from '../content/site';
+import { github, jobTitle, name } from '../content/site';
 // noindex (the 404 page): ask search engines to skip it, and claim no canonical address.
 interface Props { title: string; description: string; path: string; jsonLd?: Record<string, unknown>; ogImage?: string; noindex?: boolean }
 const { title, description, path, jsonLd, ogImage, noindex } = Astro.props;
@@ -8,11 +8,11 @@ const canonical = new URL(path, site).href;
 const image = new URL(ogImage ?? '/og.png', site).href;
 const person = {
   '@type': 'Person',
-  name: 'James Murray',
+  name,
   image: new URL('/james-murray.jpg', site).href,
-  alternateName: 'James JR Murray',
+  alternateName: 'James Murray',
   url: new URL('/', site).href,
-  jobTitle: 'Area Product Owner',
+  jobTitle,
   worksFor: { '@type': 'Organization', name: 'Holiday Extras' },
   address: { '@type': 'PostalAddress', addressRegion: 'Kent', addressCountry: 'GB' },
   sameAs: ['https://www.linkedin.com/in/jamesjrmurray', github],
@@ -30,7 +30,7 @@ const ld = jsonLd
 {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
 <link rel="sitemap" href="/sitemap-index.xml" />
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="James Murray" />
+<meta property="og:site_name" content={name} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 {!noindex && <meta property="og:url" content={canonical} />}

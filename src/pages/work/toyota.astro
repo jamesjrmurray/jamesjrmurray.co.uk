@@ -1,9 +1,10 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { toyota } from '../../content/toyota';
+import { name } from '../../content/site';
 ---
 <Base
-  title="Data foundations for AI at Toyota · James Murray"
+  title={`Data foundations for AI at Toyota · ${name}`}
   description={toyota.description}
   path="/work/toyota/"
   ogImage="/og-toyota.png"

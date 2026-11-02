@@ -1,11 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { thisWebsite as cs } from '../../content/this-website';
-import { projects } from '../../content/site';
+import { name, projects } from '../../content/site';
 const codeUrl = projects[0].codeUrl;
 ---
 <Base
-  title={`${cs.title} · James Murray`}
+  title={`${cs.title} · ${name}`}
   description={cs.description}
   path="/work/this-website/"
   ogImage="/og-this-website.png"
